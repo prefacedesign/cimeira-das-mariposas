@@ -1,7 +1,7 @@
 # Cimeira das Mariposas  
 *project codename (Moth Summit)*
 
-A next-generation **Online Scientific Olympiad** platform—designed to complement and eventually replace ONHB 2.0. This **monorepo** brings together all of:
+A  **Online Scientific Olympiad** web platform—designed to complement and eventually replace ONHB 2.0. This **monorepo** brings together all of:
 
 - **Documentation & ADRs** (`docs/`)  
 - **Shared libraries** (`packages/common/`)  
