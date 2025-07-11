@@ -5,6 +5,14 @@
 
 ---
 
+## Preamble
+
+Reading this ADR in full might feel daunting—it certainly contains a lot of moving parts. Yet it’s no more complex than our existing ONHB-2 platform, which was originally built around an assumption that employing a rigid stantard design pattern REST-API + MySQL + Angular would magically organize the code by itself. That simple core fit only a narrow set of use cases; every feature beyond it required brittle, ad-hoc workarounds and manual scripts. Today, developers face a high cognitive load just to keep track of all that must be done to keep the systems working.
+
+By laying out all architectural decisions and surface complexity up front, we create a cohesive blueprint that is actually **simpler** and more maintainable than the tangled legacy codebase it replaces.
+
+---
+
 ## Context
 We are creating a new web platform for Online Scientific Olympiads. 
 
