@@ -139,8 +139,29 @@ Use **NestJS** with the **@nestjs/cqrs** module in `apps/backend/` to implement 
 - **TypeScript first:** Full TS support with decorators and metadata enhances developer productivity and type safety.  
 - **Rich ecosystem:** A mature collection of Nest plugins is available for job scheduling (`@nestjs/schedule`), health checks (`@nestjs/terminus`), metrics, and more.  
 
+---
 
-### 7. Database & Asset Storage  
+### 7. Shared Libraries & Packages
+
+**Decision:**  
+Extract all cross-cutting domain logic (e.g. question types, validation, serializers) into local packages under `packages/`, consumed via Yarn Workspaces by both the Nuxt frontend and the NestJS backend.
+
+**Rationale:**  
+- **Code reuse:** Centralizes feature implementations so both UI and API share a single source of truth.  
+- **Consistency:** Eliminates duplication and drift when multiple services must interpret the same domain concepts.  
+- **Modularity:** Encapsulates related functionality in discrete packages, simplifying testing, versioning, and replacement.  
+- **Scaffolding:** Leverages workspace templates to rapidly bootstrap new feature packages with minimal boilerplate.
+
+**Conceptual note:**  
+Rather than forcing every feature into a single directory tree (“putting things in boxes”), this approach treats shared logic as referenced pointers—packages that can be grouped and composed along multiple dimensions (by domain, by layer, or by team) without duplication. It’s a way to subdivide and recombine project concerns fluidly, avoiding the rigidity of a one-size-fits-all folder hierarchy.
+
+**Consequences:**  
+- **Tighter coupling:** Changes to a shared package ripple across all consumers, requiring coordinated updates.  
+- **Version management:** Necessitates a clear strategy for publishing and upgrading internal packages.  
+- **Tooling complexity:** Local package resolution and watch/ rebuild workflows demand extra configuration in the dev shell and CI.
+
+
+### 8. Database & Asset Storage  
 *(PostgreSQL + Kafka + S3-compatible storage)*
 
 **Decision:**  
@@ -152,7 +173,7 @@ Use **PostgreSQL** as our primary relational database, **Kafka** for event strea
 - **Legacy integration:** `mysql_fdw` lets us query existing MySQL tables from Postgres without dual-writes, smoothing the transition.  
 - **Scalable assets:** An S3-compatible store (e.g. AWS S3 or MinIO) provides durable, cost-effective hosting for images, PDFs, and other large files.  
 
-### 8. Coexistence Strategy
+### 9. Coexistence Strategy
 
 **Decision:**  
 Adopt a two-phase migration approach:
@@ -167,7 +188,7 @@ Adopt a two-phase migration approach:
 - **Natural cut-over points:** Completing each feature’s migration provides a clear, testable cut-over moment.
 
 
-### 9. Analytics & Reporting Layer  
+### 10. Analytics & Reporting Layer  
 *(Trino)*
 
 **Decision:**  
@@ -183,7 +204,7 @@ Use **Trino** as our federated analytics engine, enabling ANSI-SQL queries acros
 
 ---
 
-### 10. License  
+### 11. License  
 *(Mozilla Public License 2.0)*
 
 **Decision:**  
@@ -211,6 +232,8 @@ Release the project under the **Mozilla Public License 2.0 (MPL-2.0)**.
 - **Scalable platform:** Ready to serve larger audiences with federated analytics and decoupled workers.  
 - **Single source of truth for docs:** ADRs and Markdown live in one place, ensuring consistency.
 
+---
+
 ### Drawbacks
 - **Steep learning curve:** Nix, Trino, NestJS/CQRS and EDA/Kafka demand significant up-front investment.  
 - **Operational overhead:** Running Trino clusters and managing Nix builds in CI adds complexity.  
@@ -226,7 +249,7 @@ Release the project under the **Mozilla Public License 2.0 (MPL-2.0)**.
 2. Scaffold directories: `docs/`, `packages/common/`, `apps/nuxt-app/`, `apps/backend/`.  
 3. Add this file as `docs/architecture/adr/0000-initial-architecture.md`.  
 4. Create ADR template in `docs/architecture/templates/_adr-template.md`.  
-5. Deliver a “thin slice” feature: new dashboard with single funcionality, generate common reports and data exports.
+5. Deliver a “thin slice” feature: new dashboard with single functionality, generate common reports and data exports.
 
 ---
 
