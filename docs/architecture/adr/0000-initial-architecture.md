@@ -6,163 +6,217 @@
 ---
 
 ## Context
-We are creating a new web platform for Online Scientific Olympiads. It will replace the current platform (ONHB-2) that we use now to run ONHB (Olimpíada Nacional em História do Brasil) that is on its 17th edition, to:
+We are creating a new web platform for Online Scientific Olympiads. 
 
-- improve **maintainability** and **onboarding** for new developers  
-- improve **automation** of operational processes to increase productivity of the management team, and remove as much as possible from the workflow hand-work that is done in time critical moments
-- improve **data extraction** and reporting capabilities, to automate data recovery operations that currently are done on a one by one basis
-- improve **admin user experience** for the management team (developers and pedagogical team). Facilitating also onboarding of people on the pedagogical team.
-- improve **data availability for support team** provide tools for support teams to be able to acquire relevant information more easily, offloading the technical team.
-- provide a **fresh start for development culture**: break old habits used on the last platform, by starting a new project on a different footing.
-- provide a **foundation for a design rework and future refactors**.
+It will replace the current platform (ONHB-2) that we use now to run ONHB (Olimpíada Nacional em História do Brasil) that is on its 17th edition. 
 
-The new platform must continue to handle high submission throughput, offer strong admin security, and enable a smooth user experience, all while coexisting without dual-writes until we can fully cut over.
+This rewrite aims to:
+
+- **Improve maintainability** and **onboarding** for new developers  
+- **Automate operational processes** to boost management productivity and eliminate last-minute critical manual work  
+- **Enhance data extraction & reporting** to automate one-off data-recovery tasks  
+- **Streamline the admin experience** for both developers and pedagogical staff 
+- **Empower the support team** with self-service data tools, reducing reliance on developers  
+- **Cultivate a fresh development culture** by breaking legacy habits and starting on a clean slate  
+- **Lay the groundwork** for future UX redesigns and large-scale refactors
+
+The new platform must maintain:
+
+- High submission throughput  
+- Robust admin security  
+- A good user experience  
+
+It must also coexist with the legacy system **without dual-writes** until the full cutover is complete.
+
 
 ---
 
 ## Decisions
 
 ### -1. English for git commit messages, code commentary and documentation 
-**Decision:** Use English as the project development language, but leverage modern LLMs to maintain a portuguese translation of the documentation
+**Decision:** All source-level text (commit messages, code comments, and documentation) will be written in English. Portuguese translations of documentation will be generated and maintained via LLM assistance.
+
 **Rationale:** Team already used to it, and this helps dev members to practice and be ready to be part of multi-national teams. As this project is open source and we aim for eventually to open up for contributions for the community, we don't get locked out of this option by the choice of language.
 
 
-### 0. Languages (TypeScript)
-**Decision:** Use mainly TypeScript for front end and back end.
+### 0. TypeScript as main programming language
+**Decision:** Use TypeScript across both frontend and backend services.
 **Alternatives Considered:**
-  - **TypeScript**
-  - **Javascript**
-  - **Hybrid TypeScript + PHP**  
-  - **Hybrid JavaScript + PHP** Most familiar to the team.
-  - **Hybrid TS or JS + Go** Most performant option
+  - **TypeScript (all code)**
+  - **JavaScript (all code)**
+  - **JS/TS + PHP**  
+  - **JS/TS + Go**
 **Rationale:**
-  - While keeping JavaScript for frontend and PHP for frontend would be more familiar to current team, Typescript's provides a better development experience and helps to identify more errors while still on the editor, IDEs can provide better contextual inline help. PHP while more mature nowadays, is still a very cumbersome language and subjectivily despite long time experience it still feels 'ugly', so the team was kind of eager to move on from it. And moving on to use the same language for frontend and backend will help to share code between them.
+  - **Type safety & DX:** TypeScript surfaces errors in-editor and unlocks richer IDE tooling.
+  - **Unified stack:** one language across frontend/backend eases code sharing and cross-team collaboration.
+  - **Departure from PHP:** despite maturity, PHP feels cumbersome; the team prefers a cleaner JS/TS ecosystem.
 
 
 ### 1. Monorepo  
-**Decision:** Use a single monorepo (with Yarn Workspaces) for code, docs, and infra.  
+**Decision:** Use a single monorepo managed with **Yarn Workspaces** for code, docs, shared libraries and infra. 
 **Alternatives Considered:**  
   - **Multi-repo** (one repo per service, integration using yarn or node packages)  
   - **Monorepo**  
 **Rationale:**  
-  - Yarn manages better multiple workspaces than plain npm.
-  - Simplifies sharing of `@common` modules and ADRs.  
-  - One CI pipeline covering all packages.  
-  - Easier cross-cutting refactors and version coordination.
-  - Team and project is small enough that project won't grow large enough for the repository to become too big. And if it does arrive to that point, moving away from monorepo can be done.
-  - Single development environment helps to keep track of what you must keep running for the whole system to work.
+  - **Workspace management:** Yarn’s workspaces CLI and hoisting are more battle-tested than npm’s.
+  - **Code reuse:** Simplifies sharing of @common modules, types, and ADR templates.
+  - **Unified CI:** One pipeline to lint, test, and build all packages together.
+  - **Cross-cutting refactors:** Easier to rename, move or version code that spans multiple services.
+  - **Repo size trade-off:** Our small team/project means the repo will remain manageable; if it grows too large, we can split it later.
+  - **Single dev shell:** One devenv.sh/Nix shell covers every package, so you know exactly which tools and services to run locally.
 
 ---
 
 ### 2. Dev Environment (`devenv.nix`)  
-**Decision:** Define a Nix-based dev environment (`devenv.nix`), with `devenv up` for spinning up a dev environment and `devenv shell` for a development shell.
+**Decision:** Provision a reproducible development environment via Nix (`devenv.nix`), exposing two commands:
+  - `devenv up` – bootstraps all required services (databases, Kafka, etc.)
+  - `devenv shell` – drops you into a shell with all the tools (Node, Git, Typst, Trino CLI, etc.)
 **Rationale:**  
-  - Guarantees identical tool versions (Node, Git, Typst, Trino CLI) across all machines and CI.  
-  - Eliminates “works on my machine” drift.  
-  - Project lead has enought familiarity with Nix outweighs Docker-only alternatives, other team members have less of familiarity but they will have to trust their project lead on this one :D
+  - **Reproducibility:** Pins exact versions of Node, Git, Typst, Trino CLI, etc., across every dev machine and CI.
+  - **Environment Consistency:** Eliminates “works on my machine” drift by removing OS-level discrepancies.
+  - **Streamlined Onboarding:** New contributors can spin up the full stack with one command.
+  - **Team Expertise:** Our lead’s familiarity with Nix outweighs the learning curve, and the team will ramp up through shared shell definitions.
 
 ---
 
 ### 3. Documentation (VuePress 2)  
-**Decision:** Use **VuePress 2** for multilingual Markdown docs and ADRs under `docs/`.  
+**Decision:**  Adopt VuePress 2 as our Markdown site generator for its native Vue integration, built-in i18n, and easy theming. 
 **Alternatives Considered:**  
   - **Docusaurus** (built-in versioning, React/MDX)  
   - **MkDocs Material** (Python, lightweight)  
   - **VuePress 2**  
 **Rationale:**  
-  - Leverages our Vue expertise and MDX-like flexibility.  
-  - First-class i18n support out of the box.  
-  - Easy theming and plugin ecosystem.
-  - Avoids introducing too much elements to the tech stack
+  - **Vue & MDX-style authoring:** leverages our team’s Vue expertise and enables embedded components via MDX-like syntax.
+  - **Multilingual out of the box:** first-class i18n config and language selector with zero plugins.
+  - **Rich plugin ecosystem:** theming, search, diagram support, and more via official/community plugins.
+  - **Minimal added complexity:** integrates smoothly into our Node/Vue toolchain without dragging in React or Python runtimes.
 
 ---
 
 ### 4. Frontend Framework (Nuxt 3 + Tailwind CSS)  
-**Decision:** Build the UI in **Nuxt 3** (`apps/nuxt-app/`) with Tailwind CSS as a styling framework.  
+**Decision:** Build the UI in **Nuxt 3** (`apps/nuxt-app/`), using **Tailwind CSS** for styling.
 **Rationale:**  
-  - Our team’s deep experience with Vue 3 and Nuxt conventions.  
-  - Built-in SSR and composables; avoids introducing React or a less-opinionated framework.  
-  - proximity to HTML+CSS makes it easier for designers to work directlly on the code
-  - Tailwind’s utility classes simplify styling within Vue components.
+  - **Vue proficiency:** Leverages our team’s experience with Vue 3 and Nuxt conventions.
+  - **Server-side rendering:** Built-in SSR and composables avoid pulling in React or another heavy framework.
+  - **Designer-friendly:** Proximity to HTML + CSS lets designers work directly in the codebase.
+  - **Utility-first styling:** Tailwind’s utility classes streamline styling inside Vue components.
 
 ---
 
-### 5. Backend Architecture (Event Driven Architecture, following Async API standard)  
-**Decision:** Follow an Event Driven Architecture, with Event Sourcing (generated events are the source of truth, events trigger modification of read structures), CQRS (write paths and read paths have different models).
+### 5. Backend Architecture  
+*(Event-Driven, Event Sourcing & CQRS via AsyncAPI spec)*
+
+**Decision:** Adopt an event-driven architecture (EDA) with event sourcing and CQRS, publishing all commands & events according to our AsyncAPI contract.  
+
 **Rationale:**  
-  - Current platform has a REST Crud API, that already had to deviate from a pure resource oriented design, with the addition of 'actions' that amount for actual RPCs (remote procedure calls), we already have data spread with multiple sources, with a dataflow between them, for long running tasks we have makeshift console commmands that fill the gap for stuff that won't fit well in a REST API call. Some stuff already work in a crude event driven way (notifications for instance) with some fragile cron jobs.  
-  - switching to a EDA will enable some systems that are currently implemented in a cumbersome way to have a more straightforward implementation
-  - once we have an EDA implemented coexistence of multiple systems becomes much more easy (you can for example, implement only one step of saga in Golang for instance for something that is used a lot, and have a disproportionate impact on the performance)
-  - some cons:
-    - for some stuff that are more simple, it adds some friction in initial implementation, a cost we must pay to make the architecture uniform accross all systems.
-    - the team is still green to this way of working, it _will_ result in reworks and suboptimal implementations for the first modules made doing that
-  - the ability to replay history of events is a huge boost to our ability to test system changes, and system performance
+  - **Legacy limitations:** Our current REST API already needed RPC-style “actions,” ad-hoc cron jobs, and console scripts for long-running tasks.
+  - **Loose coupling:** EDA lets us decouple services into small, polyglot workers (e.g. a high-performance Go saga step).
+  - **Saga orchestration:** Native event flows simplify multi-step transactions, retries, compensations and load management (for example: accruing batches of same nature changes)
+  - **Event replay:** Having an append-only event log boosts testability, time-travel debugging, and auditability.
+  - **AsyncAPI contracts:** Defining all events in an AsyncAPI spec gives us type-safe, versioned message schemas across producers & consumers.
+
+**Consequences:**
+*Drawbacks we have to live with:*
+  - **Initial friction:** Adds boilerplate to simple CRUD flows and requires team ramp-up on EDA patterns.
+  - **Learning curve:** Our team is new to fully event-driven systems, so first modules will incur some rework.
 
 ---
 
-### 6. Backend & Workers (NestJS + CQRS)  
-**Decision:** Use **NestJS** with **@nestjs/cqrs** in `apps/backend/` for HTTP APIs and Kafka workers.  
+### 6. Backend & Workers  
+*(NestJS + @nestjs/cqrs)*
+
+**Decision:**  
+Use **NestJS** with the **@nestjs/cqrs** module in `apps/backend/` to implement all HTTP APIs and Kafka-based worker processes.
+
 **Alternatives Considered:**  
-  - **Moleculer** (service broker)  
-  - **DIY** (Express/Koa + kafkajs + homegrown patterns)  
-  - **NestJS + CQRS**  
-**Rationale:**  
-  - Structured modules, DI, and built-in support for Sagas and Events.  
-  - Strong TypeScript support and testability.  
-  - Ecosystem of Nest plugins for scheduling, health checks, and metrics.
+- **Moleculer** (service-broker framework)  
+- **DIY**: Express/Koa + kafkajs + custom orchestration  
+- **NestJS + CQRS** *(chosen)*  
 
-### 7. Database and asset storage (Postgres + Kafka + S3 compatible asset storages)
-**Decision:** Use PostgreSQL as main database, Kafka as data streaming solution, direct MySQL connections for legacy reads.
 **Rationale:**  
-  - Kafka is a mature solution that is open source and industry standard for this sort of application
-  - Postgres is a full featured SQL RDBMS solution, that handles better complex reads and writes than MySQL, has materialized views,
-  MySQL initial setup is easier, and the team is more used to it, but its advantages stop there, migration to Postgres
-  - There is an option to read MySQL tables through mysql_fdw that can be used for the transition process
+- **Modular architecture:** Nest’s module system and built-in dependency injection enforce clear boundaries between services.  
+- **CQRS & Sagas support:** @nestjs/cqrs provides out-of-the-box patterns for commands, events, and long-running workflows.  
+- **TypeScript first:** Full TS support with decorators and metadata enhances developer productivity and type safety.  
+- **Rich ecosystem:** A mature collection of Nest plugins is available for job scheduling (`@nestjs/schedule`), health checks (`@nestjs/terminus`), metrics, and more.  
 
 
-### 8. Coexistence Strategy 
-**Decision:** Phase One: New features implemented in the new tech stack—but no dual-writes. Phase Two refactor step by step of core funcionality, writes never coexist, once the write path is implemented, old write path is deprecated. Read path can have some degree of temporary duplication.
+### 7. Database & Asset Storage  
+*(PostgreSQL + Kafka + S3-compatible storage)*
+
+**Decision:**  
+Use **PostgreSQL** as our primary relational database, **Kafka** for event streaming, direct **MySQL** reads (via `mysql_fdw`) during migration, and an **S3-compatible** object store for assets.
+
 **Rationale:**  
-  - Focusing initially on missing functionality gives time to the team to adapt to the new way of doing things.
-  - Avoids breaking battle tested core funcionality.
-  - Leaves refactor of core func once the team is already comfortable with the new tech stack
-  - Clear cut-over once each feature fully migrates.
-  - Once phase two starts, some tools like Postgress + mysql_fdw can be used to help with intermmediary code
+- **Event streaming:** Kafka is a mature, open-source standard for high-throughput, durable messaging and CDC pipelines.  
+- **Advanced SQL:** PostgreSQL offers transactions, complex joins, JSONB, and materialized views—critical for our analytics and growing data models.  
+- **Legacy integration:** `mysql_fdw` lets us query existing MySQL tables from Postgres without dual-writes, smoothing the transition.  
+- **Scalable assets:** An S3-compatible store (e.g. AWS S3 or MinIO) provides durable, cost-effective hosting for images, PDFs, and other large files.  
+
+### 8. Coexistence Strategy
+
+**Decision:**  
+Adopt a two-phase migration approach:
+- **Phase 1 – Feature implementation:** Build all new functionality on the modern stack, reading legacy data via Postgres + `mysql_fdw`, while continuing to write to the existing system (no dual-writes).
+- **Phase 2 – Write-path migration:** For each feature, migrate its write path into the new stack and immediately deprecate the corresponding legacy write logic. Reads may temporarily hit both systems during the transition.
+
+**Rationale:**  
+- **Incremental ramp-up:** Let the team adapt to the new stack by delivering features rather than refactoring everything at once.  
+- **Minimized risk:** Leaving legacy write paths untouched preserves battle-tested core functionality.  
+- **Progressive refactoring:** Feature-by-feature migration narrows scope for testing and rollback.  
+- **Read continuity:** Temporary read duplication (via `mysql_fdw` or similar) keeps data available without downtime.  
+- **Natural cut-over points:** Completing each feature’s migration provides a clear, testable cut-over moment.
+
+
+### 9. Analytics & Reporting Layer  
+*(Trino)*
+
+**Decision:**  
+Use **Trino** as our federated analytics engine, enabling ANSI-SQL queries across MySQL, PostgreSQL, Kafka, S3, and other data sources without ETL.
+
+**Rationale:**  
+- **Connector ecosystem:** Built-in connectors for MySQL, Postgres, Kafka, S3, Hive, and more let us query all our data in-place.  
+- **ANSI SQL compliance:** A familiar SQL dialect means minimal ramp-up and easy reuse of existing queries.  
+- **Lightweight infrastructure:** Runs queries on existing stores—no separate OLAP cluster or data duplication required.  
+- **Materialized views & optimizations:** Supports fast, interactive reporting via native materialized views and cost-based optimizations.  
+- **Horizontal scalability:** Distributed execution lets us scale out query capacity as analytic workloads grow.
+
 
 ---
 
-### 9. Analytics/reports Layer (Trino)  
-**Decision:** Use **Trino** for federated analytics across MySQL, Postgres, Kafka, S3, etc.  
-**Rationale:**  
-  - Rich connector ecosystem; ANSI-SQL compatibility.  
-  - Leverages existing object stores and databases without a separate analytics cluster.  
-  - Supports materialized views, interactive queries, and easy scaling.
+### 10. License  
+*(Mozilla Public License 2.0)*
 
----
+**Decision:**  
+Release the project under the **Mozilla Public License 2.0 (MPL-2.0)**.
 
-### 10. License (MPL 2.0)  
-**Decision:** Release under the **Mozilla Public License 2.0**.  
 **Rationale:**  
-  - File-level copyleft ensures modifications to our code remain open.  
-  - Less viral than GPL/AGPL, but still guarantees contributions back for derived work.
+- **File-level copyleft:** Ensures any modifications to MPL-licensed files remain open under the same terms.  
+- **Balanced restrictions:** Less viral than GPL/AGPL but still requires contributions back for derived work.  
+- **License compatibility:** OSI-approved, allowing mix-and-match with other licenses in a larger codebase.
+
+**Consequences:**  
+- All source files should include the proper SPDX header (`SPDX-License-Identifier: MPL-2.0`).  
+- Third-party code can be combined in the repo, but MPL-licensed files themselves must remain open and unchanged in license.  
 
 ---
 
 ## Consequences
 
-- **Clear cut transition strategy**
-- **Improved modularity**
-- **Reduced varied work-arounds** EDA allows for all the functions to fit neatly into the design. No more awkward improvised work-arounds that fall short and are really awful to maintain and involve some amount of hand-work to make it work.
-- **Instant working development environment**
-- **Clear single step deployment**
-- **Readiness to attend a even larger public**
-- **Reduced workload for devs and management**
-- **Improved DX and UX** for the dev and management teams
-- **Reduced agility in making small incremental fixes** doing it right has an overhead cost, but enables the project sustainability, that today is bearing on being unsustainable.
-- **Steep learning curve** for Nix, Trino, NestJS/CQRS and EDA/Kafka/Async API
-- **Operational overhead** in running a Trino coordinator/workers and managing Nix builds in CI.  
-- **Single source of truth** for docs and ADRs, but requires disciplined commit practices.  
-- **Incremental migration** prevents downtime, allows for the fact that with the current team size, one bulky once a time replacement is totally unachievable.
+### Benefits
+- **Clear migration path:** Phase-by-phase rollout avoids downtime and gives clear cut-over points.  
+- **Modular codebase:** EDA/CQRS and the monorepo structure improve separation of concerns.  
+- **Eliminates ad-hoc workarounds:** Reduces brittle, manual scripts by fitting all logic into the event flow.  
+- **Reproducible environments:** Nix-driven shells ensure dev & CI match production. 
+- **Rapid onboarding:** Instant dev shell and single-step deployment lower the barrier to entry.  
+- **Scalable platform:** Ready to serve larger audiences with federated analytics and decoupled workers.  
+- **Single source of truth for docs:** ADRs and Markdown live in one place, ensuring consistency.
+
+### Drawbacks
+- **Steep learning curve:** Nix, Trino, NestJS/CQRS and EDA/Kafka demand significant up-front investment.  
+- **Operational overhead:** Running Trino clusters and managing Nix builds in CI adds complexity.  
+- **Reduced quick fixes:** The uniform EDA/CQRS architecture adds boilerplate for simple, one-off changes.  
+- **Discipline required:** A single docs source works only if the team follows strict commit and ADR practices.  
+
 
 ---
 
@@ -175,3 +229,22 @@ The new platform must continue to handle high submission throughput, offer stron
 5. Deliver a “thin slice” feature: new dashboard with single funcionality, generate common reports and data exports.
 
 ---
+
+## Future Considerations
+
+These items are on our radar but not yet decided. We’ll create dedicated ADRs as we evaluate each:
+
+- **Supabase (self-hosted)**  
+  How to integrate as a backend service (never exposed directly to the frontend) for auth and realtime subscriptions.
+
+- **Kysely vs. ORM**  
+  Evaluate using [Kysely](https://kysely.org/) for type-safe query building instead of a full-blown ORM.
+
+- **Typst for docs/certificates**  
+  Replace the current PHP + Bash + LaTeX pipeline with [Typst](https://typst.org/) for authoring and templating certificates and other documents.
+
+- **Component & chart libraries**  
+  Select a UI component library (e.g. Headless UI, Vuetify) but wrap it in our own Vue components for future swapping. Evaluate D3-based or Vega-Lite chart components for analytics dashboards.
+
+- **AI-powered dev CLI**  
+  Explore a CLI tool (integrated as a dev-shell command or CI step) to enforce architectural patterns, lint commit separation, and auto-generate translated docs for manual review.
