@@ -1,5 +1,5 @@
 {
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
   inputs.fenix.url = "github:nix-community/fenix";
   inputs.organist.url = "github:nickel-lang/organist";
 
