@@ -1,7 +1,9 @@
 {
-  "name": "nuxt-app",
+  "name": "cimaripo-control-panel",
   "private": true,
   "type": "module",
+  "author": "Lucas Vignoli Reis @ Preface & ONHB",
+  "license": "MPL 2.0",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
