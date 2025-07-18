@@ -1,4 +1,11 @@
 {
+  "compilerOptions": {
+    // allow native ESM top‑level await
+    "target": "esnext",      // or at least "es2017"
+    "module": "esnext",      // or "es2022", "nodenext", etc.
+    "moduleResolution": "node",
+    "lib": ["esnext", "dom"],
+  },
   // https://nuxt.com/docs/guide/concepts/typescript
   "files": [],
   "references": [
