@@ -1,5 +1,6 @@
-# Cimeira das Mariposas  
-*project codename (Moth Summit)*
+# Cimeira das Mariposas
+
+._project codename (Moth Summit)_
 
 A  **Online Scientific Olympiad** web platform—designed to complement and eventually replace ONHB 2.0. This **monorepo** brings together all of:
 
@@ -20,7 +21,7 @@ Our existing platform has served us well—supporting high exam-submission throu
 - **Limited analytics**: reporting and automation need modern tooling.
 - **Bad UX on the admin side**: management tools must be more user-friendly and more resilient.
 
-**Goal:** Leverage 17 years of lessons to build a more maintainable, automated, and extensible system—*incrementally*.
+**Goal:** Leverage 17 years of lessons to build a more maintainable, automated, and extensible system—_incrementally_.
 
 ---
 
@@ -41,7 +42,7 @@ We’ll follow a **two-phase rollout**:
 ## Core Principles
 
 1. **Developer Experience (DX)**  
-2. **Reproducible Dev & Prod Environments** 
+2. **Reproducible Dev & Prod Environments**
 3. **Open Source from Day 1** (License and development process)  
 4. **Documented Tech Choices**
 5. **Modular Architecture & Clear Boundaries**
